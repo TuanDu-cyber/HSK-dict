@@ -1,0 +1,12 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="#EDE7F6"/>
+  <rect x="56" y="56" width="88" height="88" rx="8" fill="#FFFFFF"/>
+  <line x1="100" y1="56" x2="100" y2="144" stroke="#E0D0F0" stroke-width="1.5"/>
+  <line x1="56" y1="100" x2="144" y2="100" stroke="#E0D0F0" stroke-width="1.5"/>
+  <line x1="56" y1="56" x2="144" y2="144" stroke="#EDE7F6" stroke-width="1" opacity="0.8"/>
+  <line x1="144" y1="56" x2="56" y2="144" stroke="#EDE7F6" stroke-width="1" opacity="0.8"/>
+  <text x="100" y="118" text-anchor="middle" font-size="52" font-weight="700" fill="#D0B8EC" opacity="0.35" font-family="serif">文</text>
+  <path d="M68 76 Q82 66 94 78 Q100 86 92 96" fill="none" stroke="#C0272D" stroke-width="5" stroke-linecap="round"/>
+  <line x1="118" y1="52" x2="92" y2="94" stroke="#8B6340" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="90" cy="97" rx="5" ry="7" fill="#C0272D" transform="rotate(-30 90 97)"/>
+</svg>
