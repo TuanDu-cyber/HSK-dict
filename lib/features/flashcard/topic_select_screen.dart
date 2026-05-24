@@ -185,14 +185,14 @@ class _TopicHeader extends StatelessWidget {
   }
 }
 
-class _TopicGrid extends StatelessWidget {
+class _TopicGrid extends ConsumerWidget {
   const _TopicGrid({required this.mode, required this.topics});
 
   final TopicSelectMode mode;
   final List<TopicSelectItem> topics;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -238,7 +238,12 @@ class _TopicGrid extends StatelessWidget {
               compact: width < 390,
               onTap: () {
                 final encodedTopic = Uri.encodeComponent(item.topic.key);
-                context.push('${mode.targetRoute}?topic=$encodedTopic');
+
+                context.push('${mode.targetRoute}?topic=$encodedTopic').then((
+                  _,
+                ) {
+                  ref.invalidate(topicSelectProvider(mode));
+                });
               },
             );
           },

@@ -13,6 +13,7 @@ class FlashcardState {
     this.favoriteWordIds = const {},
     this.isReviewingUnknown = false,
     this.isCompleted = false,
+    this.completionDialogVersion = 0,
   });
 
   final String topic;
@@ -26,6 +27,7 @@ class FlashcardState {
   final Set<String> favoriteWordIds;
   final bool isReviewingUnknown;
   final bool isCompleted;
+  final int completionDialogVersion;
 
   WordModel? get currentWord {
     if (words.isEmpty) return null;
@@ -60,6 +62,7 @@ class FlashcardState {
     Set<String>? favoriteWordIds,
     bool? isReviewingUnknown,
     bool? isCompleted,
+    int? completionDialogVersion,
   }) {
     return FlashcardState(
       topic: topic ?? this.topic,
@@ -73,6 +76,8 @@ class FlashcardState {
       favoriteWordIds: favoriteWordIds ?? this.favoriteWordIds,
       isReviewingUnknown: isReviewingUnknown ?? this.isReviewingUnknown,
       isCompleted: isCompleted ?? this.isCompleted,
+      completionDialogVersion:
+          completionDialogVersion ?? this.completionDialogVersion,
     );
   }
 }

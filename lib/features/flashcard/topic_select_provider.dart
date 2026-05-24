@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/topic_model.dart';
+import '../../repositories/flashcard_progress_repository.dart';
 import '../../repositories/topic_repository.dart';
 
 enum TopicSelectMode { flashcard, quiz, writing, speaking }
@@ -63,22 +64,38 @@ final topicRepositoryProvider = Provider<TopicRepository>((ref) {
   return const TopicRepository();
 });
 
-final topicSelectProvider =
-    FutureProvider.family<List<TopicSelectItem>, TopicSelectMode>((
-      ref,
-      mode,
-    ) async {
-      final repository = ref.watch(topicRepositoryProvider);
+final topicSelectProvider = FutureProvider.autoDispose
+    .family<List<TopicSelectItem>, TopicSelectMode>((ref, mode) async {
+      final topicRepository = ref.watch(topicRepositoryProvider);
+      final progressRepository = ref.watch(flashcardProgressRepositoryProvider);
 
-      final topics = await repository.getTopics(modeKey: mode.key);
+      final topics = await topicRepository.getTopics(modeKey: mode.key);
 
-      return topics.map((topic) {
-        return TopicSelectItem(
-          topic: topic,
-          icon: _getTopicIcon(topic.key),
-          iconBackgroundColor: _getTopicColor(topic.key),
+      final items = <TopicSelectItem>[];
+
+      for (final topic in topics) {
+        int learnedCount = topic.learnedCount;
+
+        // Hiện tại mới lưu progress thật cho Flashcard.
+        // Quiz/Writing/Speaking sau này sẽ có progress repository riêng.
+        if (mode == TopicSelectMode.flashcard) {
+          learnedCount = await progressRepository.getCurrentPositionCount(
+            topic.key,
+          );
+        }
+
+        final updatedTopic = topic.copyWith(learnedCount: learnedCount);
+
+        items.add(
+          TopicSelectItem(
+            topic: updatedTopic,
+            icon: _getTopicIcon(topic.key),
+            iconBackgroundColor: _getTopicColor(topic.key),
+          ),
         );
-      }).toList();
+      }
+
+      return items;
     });
 
 IconData _getTopicIcon(String topic) {

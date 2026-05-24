@@ -19,7 +19,9 @@ class FlashcardScreen extends ConsumerWidget {
     final state = ref.watch(flashcardProvider(topic));
 
     ref.listen<FlashcardState>(flashcardProvider(topic), (previous, next) {
-      if (previous?.isCompleted == false && next.isCompleted) {
+      final previousVersion = previous?.completionDialogVersion ?? 0;
+
+      if (next.completionDialogVersion > previousVersion) {
         _showCompleteDialog(context, ref, next);
       }
     });
