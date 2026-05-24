@@ -116,7 +116,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.quiz,
         name: AppRouteNames.quiz,
-        builder: (context, state) => const QuizScreen(),
+        builder: (context, state) {
+          final topic = state.uri.queryParameters['topic'] ?? '';
+          return QuizScreen(topic: topic);
+        },
       ),
 
       // =========================

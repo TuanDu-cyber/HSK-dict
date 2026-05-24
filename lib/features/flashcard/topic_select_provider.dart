@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/topic_model.dart';
 import '../../repositories/flashcard_progress_repository.dart';
+import '../../repositories/quiz_progress_repository.dart';
 import '../../repositories/topic_repository.dart';
 
 enum TopicSelectMode { flashcard, quiz, writing, speaking }
@@ -67,24 +68,46 @@ final topicRepositoryProvider = Provider<TopicRepository>((ref) {
 final topicSelectProvider = FutureProvider.autoDispose
     .family<List<TopicSelectItem>, TopicSelectMode>((ref, mode) async {
       final topicRepository = ref.watch(topicRepositoryProvider);
-      final progressRepository = ref.watch(flashcardProgressRepositoryProvider);
+
+      final flashcardProgressRepository = ref.watch(
+        flashcardProgressRepositoryProvider,
+      );
+
+      final quizProgressRepository = ref.watch(quizProgressRepositoryProvider);
 
       final topics = await topicRepository.getTopics(modeKey: mode.key);
 
       final items = <TopicSelectItem>[];
 
       for (final topic in topics) {
-        int learnedCount = topic.learnedCount;
+        int totalCount = topic.totalCount;
+        int progressCount = topic.learnedCount;
 
-        // Hiện tại mới lưu progress thật cho Flashcard.
-        // Quiz/Writing/Speaking sau này sẽ có progress repository riêng.
         if (mode == TopicSelectMode.flashcard) {
-          learnedCount = await progressRepository.getCurrentPositionCount(
-            topic.key,
-          );
+          progressCount = await flashcardProgressRepository
+              .getCurrentPositionCount(topic.key);
+
+          if (progressCount > totalCount) {
+            progressCount = totalCount;
+          }
         }
 
-        final updatedTopic = topic.copyWith(learnedCount: learnedCount);
+        if (mode == TopicSelectMode.quiz) {
+          // Quiz chỉ lấy tối đa 20 câu, nên Topic Quiz cũng phải hiện /20.
+          totalCount = topic.totalCount > 20 ? 20 : topic.totalCount;
+
+          progressCount = await quizProgressRepository
+              .getCurrentQuestionPositionCount(topic.key);
+
+          if (progressCount > totalCount) {
+            progressCount = totalCount;
+          }
+        }
+
+        final updatedTopic = topic.copyWith(
+          totalCount: totalCount,
+          learnedCount: progressCount,
+        );
 
         items.add(
           TopicSelectItem(
