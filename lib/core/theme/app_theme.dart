@@ -77,7 +77,7 @@ class AppTheme {
   );
 
   static const TextStyle headingXLarge = TextStyle(
-    fontSize: 36,
+    fontSize: 30,
     fontWeight: FontWeight.bold,
     color: primary,
     height: 1.15,
@@ -101,14 +101,14 @@ class AppTheme {
   );
 
   static const TextStyle hanziLarge = TextStyle(
-    fontSize: 64,
+    fontSize: 52,
     fontWeight: FontWeight.bold,
     color: primary,
     height: 1.1,
   );
 
   static const TextStyle hanziMedium = TextStyle(
-    fontSize: 40,
+    fontSize: 34,
     fontWeight: FontWeight.bold,
     color: primary,
     height: 1.15,

@@ -1,34 +1,49 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../repositories/favorites_repository.dart';
 import '../../repositories/flashcard_progress_repository.dart';
+import '../../repositories/learning_activity_repository.dart';
 import '../../repositories/tts_repository.dart';
 import '../../repositories/word_repository.dart';
 import 'flashcard_state.dart';
 
+// Provider quản lý state thẻ từ, favorite, TTS và tiến trình học theo topic.
 final flashcardProvider = StateNotifierProvider.autoDispose
     .family<FlashcardNotifier, FlashcardState, String>((ref, topic) {
       return FlashcardNotifier(
         topic: topic,
         wordRepository: ref.watch(wordRepositoryProvider),
         progressRepository: ref.watch(flashcardProgressRepositoryProvider),
+        favoritesRepository: ref.watch(favoritesRepositoryProvider),
         ttsRepository: ref.watch(ttsRepositoryProvider),
+        learningActivityRepository: ref.watch(
+          learningActivityRepositoryProvider,
+        ),
       )..loadWordsByTopic();
     });
 
 class FlashcardNotifier extends StateNotifier<FlashcardState> {
   FlashcardNotifier({
-    required String topic,
-    required WordRepository wordRepository,
-    required FlashcardProgressRepository progressRepository,
-    required TtsRepository ttsRepository,
-  }) : _wordRepository = wordRepository,
-       _progressRepository = progressRepository,
-       _ttsRepository = ttsRepository,
+    String topic = '',
+    WordRepository? wordRepository,
+    FlashcardProgressRepository? progressRepository,
+    FavoritesRepository? favoritesRepository,
+    TtsRepository? ttsRepository,
+    LearningActivityRepository? learningActivityRepository,
+  }) : _wordRepository = wordRepository ?? const WordRepository(),
+       _progressRepository =
+           progressRepository ?? FlashcardProgressRepository(),
+       _favoritesRepository = favoritesRepository ?? FavoritesRepository(),
+       _ttsRepository = ttsRepository ?? TtsRepository(),
+       _learningActivityRepository =
+           learningActivityRepository ?? LearningActivityRepository(),
        super(FlashcardState(topic: topic));
 
   final WordRepository _wordRepository;
   final FlashcardProgressRepository _progressRepository;
+  final FavoritesRepository _favoritesRepository;
   final TtsRepository _ttsRepository;
+  final LearningActivityRepository _learningActivityRepository;
 
   Future<void> loadWordsByTopic() async {
     try {
@@ -40,6 +55,7 @@ class FlashcardNotifier extends StateNotifier<FlashcardState> {
 
       final words = await _wordRepository.getWordsByTopic(state.topic);
       final progress = await _progressRepository.loadProgress(state.topic);
+      final favoriteIds = await _favoritesRepository.getFavoriteIds();
 
       final maxIndex = words.isEmpty ? 0 : words.length - 1;
       final savedIndex = progress?.currentIndex ?? 0;
@@ -52,7 +68,7 @@ class FlashcardNotifier extends StateNotifier<FlashcardState> {
         isBackSide: false,
         knownWordIds: progress?.knownWordIds ?? {},
         unknownWordIds: progress?.unknownWordIds ?? {},
-        favoriteWordIds: progress?.favoriteWordIds ?? {},
+        favoriteWordIds: favoriteIds,
         isCompleted: false,
       );
 
@@ -85,6 +101,8 @@ class FlashcardNotifier extends StateNotifier<FlashcardState> {
     final word = state.currentWord;
     if (word == null) return;
 
+    await _learningActivityRepository.markStudiedToday();
+
     final knownIds = {...state.knownWordIds};
     final unknownIds = {...state.unknownWordIds};
 
@@ -114,18 +132,10 @@ class FlashcardNotifier extends StateNotifier<FlashcardState> {
     await saveProgress();
   }
 
-  void toggleFavorite(String wordId) {
-    final favorites = {...state.favoriteWordIds};
-
-    if (favorites.contains(wordId)) {
-      favorites.remove(wordId);
-    } else {
-      favorites.add(wordId);
-    }
+  Future<void> toggleFavorite(String wordId) async {
+    final favorites = await _favoritesRepository.toggleFavorite(wordId);
 
     state = state.copyWith(favoriteWordIds: favorites);
-
-    saveProgress();
   }
 
   Future<void> speakCurrentWord() async {
@@ -142,7 +152,7 @@ class FlashcardNotifier extends StateNotifier<FlashcardState> {
         currentIndex: state.currentIndex,
         knownWordIds: state.knownWordIds,
         unknownWordIds: state.unknownWordIds,
-        favoriteWordIds: state.favoriteWordIds,
+        favoriteWordIds: const {},
       ),
     );
   }

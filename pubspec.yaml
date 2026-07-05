@@ -36,19 +36,40 @@ dependencies:
   cupertino_icons: ^1.0.8
   go_router: ^14.8.1
   flutter_riverpod: ^2.6.1
-  shared_preferences: ^2.5.3
+  shared_preferences: ^2.5.5
   flutter_tts: ^4.2.5
+  stroke_order_animator: ^3.3.1
+  google_mlkit_digital_ink_recognition: ^0.14.2
+  image_picker: ^1.2.1
+  http: ^1.6.0
+  speech_to_text: ^7.4.0
+  record: ^6.2.1
+  audioplayers: ^6.6.0
+  path_provider: ^2.1.5
+  firebase_core: ^4.10.0
+  firebase_auth: ^6.5.2
+  cloud_firestore: ^6.5.0
+  google_sign_in: ^6.2.1
+  flutter_local_notifications: ^22.0.0
+  timezone: ^0.11.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
 
+flutter_launcher_icons:
+    android: true
+    ios: true
+    image_path: "assets/icons/app_icon.png"
+    adaptive_icon_background: "#FDF0EC"
+    adaptive_icon_foreground: "assets/icons/app_icon.png"
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^6.0.0
+flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -62,16 +83,10 @@ flutter:
   assets:
     - assets/data/hsk1.json
     - assets/data/hsk2.json
-    - assets/images/lantern.png
-    - assets/images/cherry_branch.png
-    - assets/images/gift.png
+    - assets/data/hsk3.json
     - assets/images/fire.png
     - assets/images/avatar_default.png
     - assets/images/cloud_mountain.png
-    - assets/icons/flashcard.png
-    - assets/icons/quiz.png
-    - assets/icons/brush.png
-    - assets/icons/microphone.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
@@ -102,3 +117,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+ 

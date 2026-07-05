@@ -56,7 +56,7 @@ class ProgressHeader extends StatelessWidget {
             child: LinearProgressIndicator(
               value: safeProgress,
               minHeight: 6,
-              backgroundColor: AppTheme.primaryLight.withOpacity(0.45),
+              backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.45),
               valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
             ),
           ),
@@ -125,7 +125,7 @@ class _CenterProgress extends StatelessWidget {
               CircularProgressIndicator(
                 value: safeValue,
                 strokeWidth: 6,
-                backgroundColor: AppTheme.primaryLight.withOpacity(0.35),
+                backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.35),
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   AppTheme.primary,
                 ),

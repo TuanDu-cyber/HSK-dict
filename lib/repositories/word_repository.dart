@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/word_model.dart';
 
+// Repository đọc dữ liệu từ JSON trong assets và cache lại để tránh đọc lặp.
 final wordRepositoryProvider = Provider<WordRepository>((ref) {
   return const WordRepository();
 });
@@ -15,9 +16,17 @@ class WordRepository {
   static const List<String> _dataPaths = [
     'assets/data/hsk1.json',
     'assets/data/hsk2.json',
+    'assets/data/hsk3.json',
   ];
 
+  static List<WordModel>? _cachedWords;
+
   Future<List<WordModel>> getAllWords() async {
+    final cachedWords = _cachedWords;
+    if (cachedWords != null) {
+      return List.unmodifiable(cachedWords);
+    }
+
     final allWords = <WordModel>[];
 
     for (final path in _dataPaths) {
@@ -27,20 +36,31 @@ class WordRepository {
 
         final List<dynamic> wordList = _extractWordList(decoded);
 
-        final words = wordList
-            .whereType<Map<String, dynamic>>()
-            .map(WordModel.fromJson)
-            .where((word) => word.id.isNotEmpty && word.hanzi.isNotEmpty)
-            .toList();
+        for (final item in wordList) {
+          if (item is! Map<String, dynamic>) continue;
 
-        allWords.addAll(words);
+          try {
+            final word = WordModel.fromJson(item);
+
+            if (word.id.isNotEmpty && word.hanzi.isNotEmpty) {
+              allWords.add(word);
+            }
+          } catch (_) {
+            // Skip malformed JSON rows so one bad item does not break the app.
+          }
+        }
       } catch (e) {
         // TODO: Có thể log lỗi đọc file JSON nếu cần.
         // Không throw để app không crash nếu 1 file bị thiếu/lỗi.
       }
     }
 
-    return allWords;
+    _cachedWords = List.unmodifiable(allWords);
+    return List.unmodifiable(allWords);
+  }
+
+  void clearCache() {
+    _cachedWords = null;
   }
 
   Future<List<WordModel>> getWordsByTopic(String topic) async {

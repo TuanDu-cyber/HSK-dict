@@ -35,16 +35,12 @@ class FlashcardScreen extends ConsumerWidget {
             children: [
               AppBarCustom(
                 title: 'Flashcard',
-                actionIcon: Icons.bookmark_border,
                 onBack: () {
                   if (context.canPop()) {
                     context.pop();
                   } else {
                     context.go(AppRoutes.flashcardTopics);
                   }
-                },
-                onAction: () {
-                  // TODO: mở danh sách từ đã lưu.
                 },
               ),
               const SizedBox(height: AppTheme.spacing20),
@@ -117,8 +113,8 @@ class FlashcardScreen extends ConsumerWidget {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
-                disabledBackgroundColor: AppTheme.primaryLight.withOpacity(
-                  0.45,
+                disabledBackgroundColor: AppTheme.primaryLight.withValues(
+                  alpha: 0.45,
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: AppTheme.buttonRadius,
@@ -185,7 +181,7 @@ class _FlashcardBody extends ConsumerWidget {
                 _SwipeCardArea(
                   topic: topic,
                   state: state,
-                  cardHeight: cardHeight.clamp(360, 520).toDouble(),
+                  cardHeight: cardHeight.clamp(300, 420).toDouble(),
                 ),
                 const SizedBox(height: AppTheme.spacing20),
                 Center(
@@ -255,7 +251,7 @@ class _LinearProgress extends StatelessWidget {
       child: LinearProgressIndicator(
         value: value.clamp(0.0, 1.0),
         minHeight: 8,
-        backgroundColor: AppTheme.primaryLight.withOpacity(0.45),
+        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.45),
         valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
       ),
     );
@@ -318,11 +314,11 @@ class _SwipeCardAreaState extends ConsumerState<_SwipeCardArea> {
             top: 24,
             bottom: 0,
             child: Container(
-              width: MediaQuery.of(context).size.width * 0.78,
+              width: MediaQuery.of(context).size.width * 0.68,
               decoration: BoxDecoration(
                 color: _dragX >= 0
-                    ? AppTheme.success.withOpacity(0.18)
-                    : AppTheme.primaryLight.withOpacity(0.55),
+                    ? AppTheme.success.withValues(alpha: 0.18)
+                    : AppTheme.primaryLight.withValues(alpha: 0.55),
                 borderRadius: AppTheme.cardLargeRadius,
               ),
             ),
@@ -330,7 +326,7 @@ class _SwipeCardAreaState extends ConsumerState<_SwipeCardArea> {
           AnimatedContainer(
             duration: const Duration(milliseconds: 120),
             transform: Matrix4.identity()
-              ..translate(_dragX)
+              ..translateByDouble(_dragX, 0, 0, 1)
               ..rotateZ(_dragX / 900),
             child: SizedBox(
               height: widget.cardHeight,
@@ -433,7 +429,7 @@ class _FrontSide extends ConsumerWidget {
                 Text(
                   word.hanzi,
                   textAlign: TextAlign.center,
-                  style: AppTheme.hanziLarge.copyWith(fontSize: 88),
+                  style: AppTheme.hanziLarge.copyWith(fontSize: 68),
                 ),
                 const SizedBox(height: AppTheme.spacing24),
                 Text(
@@ -583,7 +579,7 @@ class _SwipeHintRow extends StatelessWidget {
           child: _SwipeHintBox(
             alignment: Alignment.centerLeft,
             icon: Icons.keyboard_double_arrow_left,
-            color: AppTheme.primaryLight.withOpacity(0.45),
+            color: AppTheme.primaryLight.withValues(alpha: 0.45),
           ),
         ),
         const SizedBox(width: AppTheme.spacing24),
@@ -591,7 +587,7 @@ class _SwipeHintRow extends StatelessWidget {
           child: _SwipeHintBox(
             alignment: Alignment.centerRight,
             icon: Icons.keyboard_double_arrow_right,
-            color: AppTheme.success.withOpacity(0.22),
+            color: AppTheme.success.withValues(alpha: 0.22),
           ),
         ),
       ],

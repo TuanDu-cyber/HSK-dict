@@ -93,7 +93,7 @@ class _QuestionDot extends StatelessWidget {
       backgroundColor = AppTheme.primary;
       textColor = Colors.white;
     } else if (isAnswered) {
-      backgroundColor = AppTheme.primaryLight.withOpacity(0.35);
+      backgroundColor = AppTheme.primaryLight.withValues(alpha: 0.35);
       textColor = AppTheme.primary;
     } else {
       backgroundColor = AppTheme.iconSoftBg;

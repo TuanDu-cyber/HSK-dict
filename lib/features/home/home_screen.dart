@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/bottom_nav.dart';
-import '../../core/widgets/decorative_background.dart';
+import '../../core/widgets/app_decorative_background.dart';
+import '../../repositories/notification_repository.dart';
 import 'home_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -13,38 +14,29 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final homeState = ref.watch(homeProvider);
+    final homeAsync = ref.watch(homeAsyncProvider);
+
+    ref.listen<AsyncValue<HomeState>>(homeAsyncProvider, (previous, next) {
+      final homeState = next.valueOrNull;
+      if (homeState == null) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ref.read(notificationRepositoryProvider).scheduleDailyStreakReminder();
+      });
+    });
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: DecorativeBackground(
-        // Asset dự kiến:
-        // cherryBlossomAsset: 'assets/images/cherry_branch.png',
-        // lanternAsset: 'assets/images/lantern.png',
-        // mountainAsset: 'assets/images/cloud_mountain.png',
-        cherryBlossomAsset: 'assets/images/cherry_branch.png',
-        lanternAsset: 'assets/images/lantern.png',
-        mountainAsset: 'assets/images/cloud_mountain.png',
-        showCherry: true,
-        showLantern: true,
-        showCloud: false,
-        showMountain: true,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.screenPadding,
-            AppTheme.spacing20,
-            AppTheme.screenPadding,
-            AppTheme.spacing24,
+      body: AppDecorativeBackground(
+        useSafeArea: true,
+        child: homeAsync.when(
+          data: (homeState) => _HomeContent(homeState: homeState),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppTheme.primary),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _HomeHeader(homeState: homeState),
-              const SizedBox(height: AppTheme.spacing32),
-              _StreakCard(homeState: homeState),
-              const SizedBox(height: AppTheme.spacing24),
-              _FeatureGrid(features: homeState.features),
-            ],
+          error: (_, _) => const Center(
+            child: Text('Không thể tải trang chủ.', style: AppTheme.body),
           ),
         ),
       ),
@@ -53,7 +45,7 @@ class HomeScreen extends ConsumerWidget {
         items: const [
           BottomNavItem(icon: Icons.home_outlined, label: 'Trang chủ'),
           BottomNavItem(icon: Icons.search_outlined, label: 'Tìm kiếm'),
-          BottomNavItem(icon: Icons.translate_outlined, label: 'Dịch'),
+          BottomNavItem(icon: Icons.menu_book_outlined, label: 'Nối từ'),
           BottomNavItem(icon: Icons.person_outline, label: 'Cài đặt'),
         ],
         onTap: (index) {
@@ -65,13 +57,41 @@ class HomeScreen extends ConsumerWidget {
               context.go(AppRoutes.search);
               break;
             case 2:
-              context.go(AppRoutes.translate);
+              context.go(AppRoutes.gameTopics);
               break;
             case 3:
               context.go(AppRoutes.account);
               break;
           }
         },
+      ),
+    );
+  }
+}
+
+class _HomeContent extends StatelessWidget {
+  const _HomeContent({required this.homeState});
+
+  final HomeState homeState;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppTheme.screenPadding,
+        AppTheme.spacing20,
+        AppTheme.screenPadding,
+        AppTheme.spacing24,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _HomeHeader(homeState: homeState),
+          const SizedBox(height: AppTheme.spacing24),
+          _StreakCard(homeState: homeState),
+          const SizedBox(height: AppTheme.spacing24),
+          _FeatureGrid(features: homeState.features),
+        ],
       ),
     );
   }
@@ -93,7 +113,7 @@ class _HomeHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Chào, ${homeState.displayName} 👋',
+                  'Ch\u00e0o, ${homeState.displayName} \u{1F44B}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTheme.headingLarge,
@@ -145,14 +165,7 @@ class _Avatar extends StatelessWidget {
       child: CircleAvatar(
         backgroundColor: AppTheme.iconSoftBg,
         backgroundImage: imageProvider,
-        onBackgroundImageError: (_, __) {},
-        child: avatarUrl == null
-            ? const Icon(
-                Icons.person_outline,
-                color: AppTheme.primary,
-                size: 32,
-              )
-            : null,
+        onBackgroundImageError: (_, _) {},
       ),
     );
   }
@@ -190,7 +203,7 @@ class _StreakCard extends StatelessWidget {
                       ),
                       const SizedBox(height: AppTheme.spacing6),
                       Text(
-                        'Bạn đã online ${homeState.onlineMinutesToday} phút',
+                        'Học mỗi ngày để giữ chuỗi',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTheme.subtitleMedium.copyWith(fontSize: 16),
@@ -235,6 +248,7 @@ class _StreakCard extends StatelessWidget {
                     child: _WeekDayItem(
                       label: homeState.weekDays[index],
                       isToday: isToday,
+                      isStudied: homeState.studiedWeekdays.contains(index + 1),
                     ),
                   );
                 }),
@@ -263,10 +277,10 @@ class _FireStreakIcon extends StatelessWidget {
           Image.asset(
             'assets/images/fire.png',
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) {
+            errorBuilder: (_, _, _) {
               return const Icon(
                 Icons.local_fire_department,
-                size: 86,
+                size: 64,
                 color: AppTheme.primary,
               );
             },
@@ -277,7 +291,7 @@ class _FireStreakIcon extends StatelessWidget {
               '$streak',
               style: AppTheme.headingLarge.copyWith(
                 color: Colors.white,
-                fontSize: 34,
+                fontSize: 30,
               ),
             ),
           ),
@@ -292,35 +306,36 @@ class _GiftIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/gift.png',
-      width: 76,
-      height: 76,
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) {
-        return Container(
-          width: 68,
-          height: 68,
-          decoration: BoxDecoration(
-            color: AppTheme.iconSoftBg,
-            borderRadius: AppTheme.cardRadius,
-          ),
-          child: const Icon(
-            Icons.card_giftcard,
-            color: AppTheme.primary,
-            size: 36,
-          ),
-        );
-      },
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        color: AppTheme.iconSoftBg,
+        borderRadius: AppTheme.cardRadius,
+        border: Border.all(
+          color: AppTheme.primaryLight.withValues(alpha: 0.45),
+          width: 1.2,
+        ),
+      ),
+      child: const Icon(
+        Icons.card_giftcard_rounded,
+        color: AppTheme.primary,
+        size: 36,
+      ),
     );
   }
 }
 
 class _WeekDayItem extends StatelessWidget {
-  const _WeekDayItem({required this.label, required this.isToday});
+  const _WeekDayItem({
+    required this.label,
+    required this.isToday,
+    required this.isStudied,
+  });
 
   final String label;
   final bool isToday;
+  final bool isStudied;
 
   @override
   Widget build(BuildContext context) {
@@ -331,14 +346,16 @@ class _WeekDayItem extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: isToday ? AppTheme.primary : Colors.transparent,
+            color: isStudied ? AppTheme.primary : Colors.transparent,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isToday ? AppTheme.primary : AppTheme.borderMedium,
+              color: isStudied || isToday
+                  ? AppTheme.primary
+                  : AppTheme.borderMedium,
               width: 1.4,
             ),
           ),
-          child: isToday
+          child: isStudied
               ? const Icon(Icons.check, color: Colors.white, size: 24)
               : null,
         ),
@@ -394,10 +411,6 @@ class _FeatureCard extends StatelessWidget {
       child: InkWell(
         borderRadius: AppTheme.cardLargeRadius,
         onTap: () {
-          // Các route topic cần được thêm ở app_router.dart:
-          // /quiz/topics
-          // /writing/topics
-          // /speaking/topics
           context.push(feature.route);
         },
         child: Container(
@@ -416,8 +429,8 @@ class _FeatureCard extends StatelessWidget {
                 child: Text(
                   feature.hanzi,
                   style: AppTheme.hanziMedium.copyWith(
-                    fontSize: 48,
-                    color: AppTheme.primary.withOpacity(0.9),
+                    fontSize: 38,
+                    color: AppTheme.primary.withValues(alpha: 0.9),
                   ),
                 ),
               ),
@@ -430,7 +443,7 @@ class _FeatureCard extends StatelessWidget {
                     'assets/images/cloud_mountain.png',
                     width: 120,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
                   ),
                 ),
               ),

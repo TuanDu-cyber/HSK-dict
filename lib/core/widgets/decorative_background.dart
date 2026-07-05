@@ -6,108 +6,31 @@ class DecorativeBackground extends StatelessWidget {
   const DecorativeBackground({
     super.key,
     required this.child,
-    this.cherryBlossomAsset,
-    this.lanternAsset,
-    this.cloudAsset,
-    this.mountainAsset,
     this.showCherry = true,
-    this.showLantern = false,
-    this.showCloud = true,
-    this.showMountain = true,
     this.opacity = 0.8,
     this.useSafeArea = true,
   });
 
   final Widget child;
-
-  /// Ví dụ:
-  /// assets/images/cherry_blossom.png
-  final String? cherryBlossomAsset;
-
-  /// Ví dụ:
-  /// assets/images/lantern.png
-  final String? lanternAsset;
-
-  /// Ví dụ:
-  /// assets/images/cloud.png
-  final String? cloudAsset;
-
-  /// Ví dụ:
-  /// assets/images/mountain.png
-  final String? mountainAsset;
-
   final bool showCherry;
-  final bool showLantern;
-  final bool showCloud;
-  final bool showMountain;
   final double opacity;
   final bool useSafeArea;
 
   @override
   Widget build(BuildContext context) {
-    final content = Stack(
+    return Stack(
       children: [
-        Positioned.fill(child: ColoredBox(color: AppTheme.background)),
-        if (showMountain && mountainAsset != null)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.14,
-                child: Image.asset(
-                  mountainAsset!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ),
-          ),
-        if (showCloud && cloudAsset != null)
-          Positioned(
-            left: -20,
-            top: 150,
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: 0.18,
-                child: Image.asset(
-                  cloudAsset!,
-                  width: 180,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ),
-          ),
-        if (showLantern && lanternAsset != null)
-          Positioned(
-            right: 76,
-            top: 0,
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: opacity,
-                child: Image.asset(
-                  lanternAsset!,
-                  width: 58,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
-            ),
-          ),
-        if (showCherry && cherryBlossomAsset != null)
+        const Positioned.fill(child: ColoredBox(color: AppTheme.background)),
+        if (showCherry)
           Positioned(
             right: -24,
             top: 110,
             child: IgnorePointer(
               child: Opacity(
-                opacity: opacity,
-                child: Image.asset(
-                  cherryBlossomAsset!,
-                  width: 180,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                opacity: opacity * 0.16,
+                child: CustomPaint(
+                  size: const Size(180, 140),
+                  painter: _CherryPetalPainter(),
                 ),
               ),
             ),
@@ -115,7 +38,83 @@ class DecorativeBackground extends StatelessWidget {
         Positioned.fill(child: useSafeArea ? SafeArea(child: child) : child),
       ],
     );
+  }
+}
 
-    return content;
+class _CherryPetalPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final branchPaint = Paint()
+      ..color = AppTheme.primary.withValues(alpha: 0.14)
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    final petalPaint = Paint()
+      ..color = AppTheme.primaryLight.withValues(alpha: 0.38)
+      ..style = PaintingStyle.fill;
+    final centerPaint = Paint()
+      ..color = AppTheme.primary.withValues(alpha: 0.2)
+      ..style = PaintingStyle.fill;
+
+    final branch = Path()
+      ..moveTo(size.width * 0.1, size.height * 0.72)
+      ..quadraticBezierTo(
+        size.width * 0.45,
+        size.height * 0.38,
+        size.width * 0.92,
+        size.height * 0.2,
+      );
+    canvas.drawPath(branch, branchPaint);
+
+    _drawFlower(
+      canvas,
+      Offset(size.width * 0.34, size.height * 0.55),
+      11,
+      petalPaint,
+      centerPaint,
+    );
+    _drawFlower(
+      canvas,
+      Offset(size.width * 0.58, size.height * 0.36),
+      13,
+      petalPaint,
+      centerPaint,
+    );
+    _drawFlower(
+      canvas,
+      Offset(size.width * 0.76, size.height * 0.26),
+      10,
+      petalPaint,
+      centerPaint,
+    );
+  }
+
+  void _drawFlower(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    Paint petalPaint,
+    Paint centerPaint,
+  ) {
+    for (var i = 0; i < 5; i++) {
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(i * 1.256);
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(0, -radius * 0.72),
+          width: radius * 0.9,
+          height: radius * 1.35,
+        ),
+        petalPaint,
+      );
+      canvas.restore();
+    }
+
+    canvas.drawCircle(center, radius * 0.22, centerPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CherryPetalPainter oldDelegate) {
+    return false;
   }
 }

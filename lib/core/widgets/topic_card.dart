@@ -11,6 +11,7 @@ class TopicCard extends StatelessWidget {
     required this.icon,
     required this.iconBackgroundColor,
     required this.progressValue,
+    this.showProgress = true,
     this.progressText,
     this.compact = false,
     this.onTap,
@@ -25,6 +26,7 @@ class TopicCard extends StatelessWidget {
   final String? progressText;
   final bool compact;
   final VoidCallback? onTap;
+  final bool showProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -122,33 +124,35 @@ class TopicCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(
-                height: compact ? AppTheme.spacing8 : AppTheme.spacing10,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: safeProgress,
-                        minHeight: 5,
-                        backgroundColor: AppTheme.border,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppTheme.primary,
+              if (showProgress) ...[
+                SizedBox(
+                  height: compact ? AppTheme.spacing8 : AppTheme.spacing10,
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: safeProgress,
+                          minHeight: 5,
+                          backgroundColor: AppTheme.border,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppTheme.primary,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppTheme.spacing8),
-                  Text(
-                    progressText ?? '${(safeProgress * 100).round()}%',
-                    style: AppTheme.subtitle.copyWith(
-                      fontSize: compact ? 11 : 12,
+                    const SizedBox(width: AppTheme.spacing8),
+                    Text(
+                      progressText ?? '${(safeProgress * 100).round()}%',
+                      style: AppTheme.subtitle.copyWith(
+                        fontSize: compact ? 11 : 12,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

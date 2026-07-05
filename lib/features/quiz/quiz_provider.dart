@@ -4,16 +4,21 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/word_model.dart';
+import '../../repositories/learning_activity_repository.dart';
 import '../../repositories/quiz_progress_repository.dart';
 import '../../repositories/word_repository.dart';
 import 'quiz_state.dart';
 
+// Provider tạo session kiểm tra và lưu tiến trình để user có thể học tiếp.
 final quizProvider = StateNotifierProvider.autoDispose
     .family<QuizNotifier, QuizState, String>((ref, topic) {
       final notifier = QuizNotifier(
         topic: topic,
         wordRepository: ref.watch(wordRepositoryProvider),
         progressRepository: ref.watch(quizProgressRepositoryProvider),
+        learningActivityRepository: ref.watch(
+          learningActivityRepositoryProvider,
+        ),
       );
 
       ref.onDispose(notifier.disposeTimer);
@@ -26,8 +31,10 @@ class QuizNotifier extends StateNotifier<QuizState> {
     required String topic,
     required WordRepository wordRepository,
     required QuizProgressRepository progressRepository,
+    required LearningActivityRepository learningActivityRepository,
   }) : _wordRepository = wordRepository,
        _progressRepository = progressRepository,
+       _learningActivityRepository = learningActivityRepository,
        super(QuizState(topic: topic));
 
   static const int secondsPerQuestion = 25;
@@ -35,6 +42,7 @@ class QuizNotifier extends StateNotifier<QuizState> {
 
   final WordRepository _wordRepository;
   final QuizProgressRepository _progressRepository;
+  final LearningActivityRepository _learningActivityRepository;
 
   Timer? _timer;
   int _sessionSeed = 0;
@@ -73,6 +81,7 @@ class QuizNotifier extends StateNotifier<QuizState> {
         topicWords: topicWords,
         allWords: allWords,
         seed: _sessionSeed,
+        savedWordIds: progress?.wordIds ?? const [],
       );
 
       final maxIndex = questions.isEmpty ? 0 : questions.length - 1;
@@ -106,18 +115,23 @@ class QuizNotifier extends StateNotifier<QuizState> {
     required List<WordModel> topicWords,
     required List<WordModel> allWords,
     required int seed,
+    List<String> savedWordIds = const [],
   }) {
     final random = Random(seed);
-    final shuffledTopicWords = [...topicWords]..shuffle(random);
+    final selectedWords = _buildSessionWords(
+      topicWords: topicWords,
+      random: random,
+      savedWordIds: savedWordIds,
+    );
 
-    final selectedWords = shuffledTopicWords.take(maxQuestionCount).toList();
+    final optionRandom = Random(seed);
 
     return selectedWords.map((word) {
       final options = _buildOptions(
         correctWord: word,
         topicWords: topicWords,
         allWords: allWords,
-        random: random,
+        random: optionRandom,
       );
 
       return QuizQuestion(
@@ -128,6 +142,28 @@ class QuizNotifier extends StateNotifier<QuizState> {
         options: options,
       );
     }).toList();
+  }
+
+  List<WordModel> _buildSessionWords({
+    required List<WordModel> topicWords,
+    required Random random,
+    required List<String> savedWordIds,
+  }) {
+    if (savedWordIds.isNotEmpty) {
+      final wordsById = {for (final word in topicWords) word.id: word};
+      final savedWords = savedWordIds
+          .map((wordId) => wordsById[wordId])
+          .whereType<WordModel>()
+          .toList();
+
+      if (savedWords.isNotEmpty) {
+        return savedWords;
+      }
+    }
+
+    final shuffledTopicWords = [...topicWords]..shuffle(random);
+
+    return shuffledTopicWords.take(maxQuestionCount).toList();
   }
 
   List<WordModel> _buildOptions({
@@ -185,15 +221,17 @@ class QuizNotifier extends StateNotifier<QuizState> {
     return 'Chọn đáp án đúng.';
   }
 
-  void selectAnswer(String wordId) {
+  Future<void> selectAnswer(String wordId) async {
     if (state.isCompleted) return;
+
+    await _learningActivityRepository.markStudiedToday();
 
     final selected = {...state.selectedAnswerIds};
     selected[state.currentIndex] = wordId;
 
     state = state.copyWith(selectedAnswerIds: selected);
 
-    saveProgress();
+    await saveProgress();
   }
 
   Future<void> nextQuestion() async {
@@ -241,6 +279,8 @@ class QuizNotifier extends StateNotifier<QuizState> {
   }
 
   Future<void> skipQuestion() async {
+    await _learningActivityRepository.markStudiedToday();
+
     final skipped = {...state.skippedQuestionIndexes};
     final correct = {...state.correctQuestionIndexes};
     final wrong = {...state.wrongQuestionIndexes};
@@ -407,6 +447,9 @@ class QuizNotifier extends StateNotifier<QuizState> {
       topic: state.topic,
       data: QuizProgressData(
         currentQuestionIndex: state.currentIndex,
+        wordIds: state.questions
+            .map((question) => question.correctWord.id)
+            .toList(),
         selectedAnswerIds: state.selectedAnswerIds,
         correctQuestionIndexes: state.correctQuestionIndexes,
         wrongQuestionIndexes: state.wrongQuestionIndexes,

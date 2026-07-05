@@ -17,7 +17,7 @@ class BottomNav extends StatelessWidget {
     this.items = const [
       BottomNavItem(icon: Icons.home_outlined, label: 'Trang chủ'),
       BottomNavItem(icon: Icons.search_outlined, label: 'Tìm kiếm'),
-      BottomNavItem(icon: Icons.menu_book_outlined, label: 'Từ vựng'),
+      BottomNavItem(icon: Icons.menu_book_outlined, label: 'Nối từ'),
       BottomNavItem(icon: Icons.person_outline, label: 'Cài đặt'),
     ],
   });

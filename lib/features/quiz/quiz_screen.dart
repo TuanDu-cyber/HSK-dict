@@ -1,11 +1,10 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/pagination_window.dart';
 import '../../models/word_model.dart';
 import 'quiz_provider.dart';
 import 'quiz_state.dart';
@@ -185,7 +184,7 @@ class _QuizAppBar extends StatelessWidget {
             Expanded(
               child: Center(child: Text('Quiz', style: AppTheme.headingMedium)),
             ),
-            _TopIconButton(icon: Icons.bookmark_border, onTap: () {}),
+            const SizedBox(width: AppTheme.appBarButtonSize),
           ],
         ),
       ),
@@ -253,7 +252,9 @@ class _QuizProgressCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: state.progressValue,
                     minHeight: 8,
-                    backgroundColor: AppTheme.primaryLight.withOpacity(0.35),
+                    backgroundColor: AppTheme.primaryLight.withValues(
+                      alpha: 0.35,
+                    ),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       AppTheme.primary,
                     ),
@@ -336,7 +337,7 @@ class _TimerCircle extends StatelessWidget {
               CircularProgressIndicator(
                 value: value.clamp(0, 1),
                 strokeWidth: 8,
-                backgroundColor: AppTheme.primaryLight.withOpacity(0.25),
+                backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
                 valueColor: const AlwaysStoppedAnimation<Color>(
                   AppTheme.primary,
                 ),
@@ -406,7 +407,7 @@ class _QuestionCard extends StatelessWidget {
               child: Text(
                 '花',
                 style: AppTheme.hanziLarge.copyWith(
-                  fontSize: 96,
+                  fontSize: 72,
                   color: AppTheme.primary,
                 ),
               ),
@@ -636,7 +637,7 @@ class _AnswerOption extends StatelessWidget {
 
   Color get _backgroundColor {
     if (showResult && isCorrect) {
-      return AppTheme.success.withOpacity(0.08);
+      return AppTheme.success.withValues(alpha: 0.08);
     }
 
     if (isWrongSelected || isSelected) {
@@ -730,6 +731,10 @@ class _QuizPagination extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(quizProvider(state.topic).notifier);
+    final window = buildPaginationWindow(
+      currentIndex: state.currentIndex,
+      total: state.totalQuestions,
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -744,8 +749,8 @@ class _QuizPagination extends ConsumerWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: state.currentIndex > 0
-                ? notifier.previousQuestion
+            onPressed: window.canGoPreviousGroup
+                ? () => notifier.goToQuestion(window.startIndex - 5)
                 : null,
             icon: const Icon(Icons.chevron_left),
             color: AppTheme.textSecondary,
@@ -754,7 +759,7 @@ class _QuizPagination extends ConsumerWidget {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List.generate(state.totalQuestions, (index) {
+                children: window.indexes.map((index) {
                   final status = state.statusOfQuestion(index);
                   final isCurrent = index == state.currentIndex;
 
@@ -771,13 +776,13 @@ class _QuizPagination extends ConsumerWidget {
                       },
                     ),
                   );
-                }),
+                }).toList(),
               ),
             ),
           ),
           IconButton(
-            onPressed: state.currentIndex < state.totalQuestions - 1
-                ? notifier.nextQuestion
+            onPressed: window.canGoNextGroup
+                ? () => notifier.goToQuestion(window.endIndex + 1)
                 : null,
             icon: const Icon(Icons.chevron_right),
             color: AppTheme.textSecondary,
@@ -826,13 +831,13 @@ class _PaginationNumber extends StatelessWidget {
 
     switch (status) {
       case QuizAnswerStatus.correct:
-        return AppTheme.success.withOpacity(0.15);
+        return AppTheme.success.withValues(alpha: 0.15);
       case QuizAnswerStatus.wrong:
         return AppTheme.tagBg;
       case QuizAnswerStatus.skipped:
         return AppTheme.progressTrack;
       case QuizAnswerStatus.none:
-        return AppTheme.tagBg.withOpacity(0.45);
+        return AppTheme.tagBg.withValues(alpha: 0.45);
     }
   }
 

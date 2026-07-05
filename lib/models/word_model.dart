@@ -1,3 +1,4 @@
+// Model chuẩn cho một từ vựng HSK đọc từ JSON và dùng xuyên suốt app.
 class WordModel {
   const WordModel({
     required this.id,
@@ -24,25 +25,25 @@ class WordModel {
   final String topic;
 
   factory WordModel.fromJson(Map<String, dynamic> json) {
-  String readString(String key, {String fallback = ''}) {
-    final value = json[key];
-    if (value == null) return fallback;
-    return value.toString();
-  }
+    String readString(String key, {String fallback = ''}) {
+      final value = json[key];
+      if (value == null) return fallback;
+      return value.toString();
+    }
 
-  return WordModel(
-    id: readString('id'),
-    level: int.tryParse(readString('level', fallback: '1')) ?? 1,
-    hanzi: readString('hanzi'),
-    pinyin: readString('pinyin'),
-    meaningVi: readString('meaning_vi', fallback: 'Chưa có nghĩa'),
-    exampleZh: readString('example_zh', fallback: 'Chưa có ví dụ'),
-    examplePinyin: readString('example_pinyin', fallback: 'Chưa có pinyin'),
-    exampleVi: readString('example_vi', fallback: 'Chưa có bản dịch'),
-    category: readString('category', fallback: 'Từ vựng'),
-    topic: readString('topic', fallback: 'Khác'),
-  );
-}
+    return WordModel(
+      id: readString('id'),
+      level: int.tryParse(readString('level', fallback: '1')) ?? 1,
+      hanzi: readString('hanzi'),
+      pinyin: readString('pinyin'),
+      meaningVi: readString('meaning_vi', fallback: 'Chưa có nghĩa'),
+      exampleZh: readString('example_zh', fallback: 'Chưa có ví dụ'),
+      examplePinyin: readString('example_pinyin', fallback: 'Chưa có pinyin'),
+      exampleVi: readString('example_vi', fallback: 'Chưa có bản dịch'),
+      category: readString('category', fallback: 'Từ vựng'),
+      topic: readString('topic', fallback: 'Khác'),
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {

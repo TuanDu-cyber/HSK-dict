@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_bar_custom.dart';
 import '../../core/widgets/bottom_nav.dart';
 
+/// Deprecated placeholder. The `/vocabulary` route redirects to Search.
 class VocabScreen extends StatelessWidget {
   const VocabScreen({super.key});
 
@@ -38,7 +39,7 @@ class VocabScreen extends StatelessWidget {
               context.go(AppRoutes.search);
               break;
             case 2:
-              context.go(AppRoutes.vocabulary);
+              context.go(AppRoutes.gameTopics);
               break;
             case 3:
               context.go(AppRoutes.account);

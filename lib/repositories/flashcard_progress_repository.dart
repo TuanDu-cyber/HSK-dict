@@ -1,11 +1,19 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'user_storage_key_helper.dart';
+
 final flashcardProgressRepositoryProvider =
     Provider<FlashcardProgressRepository>((ref) {
-      return FlashcardProgressRepository();
+      return FlashcardProgressRepository(
+        firebaseAuth: FirebaseAuth.instance,
+        firestore: FirebaseFirestore.instance,
+      );
     });
 
 class FlashcardProgressData {
@@ -32,7 +40,6 @@ class FlashcardProgressData {
       'currentIndex': currentIndex,
       'knownWordIds': knownWordIds.toList(),
       'unknownWordIds': unknownWordIds.toList(),
-      'favoriteWordIds': favoriteWordIds.toList(),
     };
   }
 
@@ -52,9 +59,43 @@ class FlashcardProgressData {
 }
 
 class FlashcardProgressRepository {
+  FlashcardProgressRepository({
+    FirebaseAuth? firebaseAuth,
+    FirebaseFirestore? firestore,
+  }) : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
+
+  String? get _uid {
+    final uid = _firebaseAuth.currentUser?.uid.trim();
+
+    if (uid == null || uid.isEmpty) {
+      return null;
+    }
+
+    return uid;
+  }
+
   String _key(String topic) {
     final normalizedTopic = _normalizeTopic(topic);
-    return 'flashcard_$normalizedTopic';
+    return UserStorageKeyHelper.key('flashcard_$normalizedTopic');
+  }
+
+  String _documentId(String topic) {
+    return 'flashcard_${_normalizeTopic(topic)}';
+  }
+
+  DocumentReference<Map<String, dynamic>> _progressDoc(
+    String uid,
+    String topic,
+  ) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('progress')
+        .doc(_documentId(topic));
   }
 
   String _normalizeTopic(String topic) {
@@ -68,6 +109,33 @@ class FlashcardProgressRepository {
   }
 
   Future<FlashcardProgressData?> loadProgress(String topic) async {
+    final uid = _uid;
+
+    if (uid == null) {
+      return _loadLocalProgress(topic);
+    }
+
+    try {
+      final doc = await _progressDoc(uid, topic).get();
+
+      if (doc.exists) {
+        final data = doc.data();
+
+        if (data != null) {
+          final progress = FlashcardProgressData.fromJson(data);
+          await _saveLocalProgress(topic: topic, data: progress);
+
+          return progress;
+        }
+      }
+    } catch (error) {
+      debugPrint('Không thể tải Flashcard progress từ Firestore: $error');
+    }
+
+    return _loadLocalProgress(topic);
+  }
+
+  Future<FlashcardProgressData?> _loadLocalProgress(String topic) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key(topic));
 
@@ -90,6 +158,31 @@ class FlashcardProgressRepository {
     required String topic,
     required FlashcardProgressData data,
   }) async {
+    await _saveLocalProgress(topic: topic, data: data);
+
+    final uid = _uid;
+
+    if (uid == null) {
+      return;
+    }
+
+    try {
+      await _progressDoc(uid, topic).set({
+        'topic': topic,
+        'currentIndex': data.currentIndex,
+        'knownWordIds': data.knownWordIds.toList(),
+        'unknownWordIds': data.unknownWordIds.toList(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (error) {
+      debugPrint('Không thể đồng bộ Flashcard progress lên Firestore: $error');
+    }
+  }
+
+  Future<void> _saveLocalProgress({
+    required String topic,
+    required FlashcardProgressData data,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(_key(topic), jsonEncode(data.toJson()));
@@ -98,6 +191,18 @@ class FlashcardProgressRepository {
   Future<void> clearProgress(String topic) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key(topic));
+
+    final uid = _uid;
+
+    if (uid == null) {
+      return;
+    }
+
+    try {
+      await _progressDoc(uid, topic).delete();
+    } catch (error) {
+      debugPrint('Không thể xóa Flashcard progress trên Firestore: $error');
+    }
   }
 
   /// Dùng cho Topic Select.

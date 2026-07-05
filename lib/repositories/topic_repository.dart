@@ -10,33 +10,47 @@ class TopicRepository {
   static const List<String> _dataPaths = [
     'assets/data/hsk1.json',
     'assets/data/hsk2.json',
+    'assets/data/hsk3.json',
   ];
+
+  static Map<String, int>? _cachedTopicCounts;
+
+  void clearCache() {
+    _cachedTopicCounts = null;
+  }
 
   Future<List<TopicModel>> getTopics({required String modeKey}) async {
     final topicCounts = <String, int>{};
 
-    for (final path in _dataPaths) {
-      try {
-        final rawJson = await rootBundle.loadString(path);
-        final decoded = jsonDecode(rawJson);
+    final cachedTopicCounts = _cachedTopicCounts;
+    if (cachedTopicCounts != null) {
+      topicCounts.addAll(cachedTopicCounts);
+    } else {
+      for (final path in _dataPaths) {
+        try {
+          final rawJson = await rootBundle.loadString(path);
+          final decoded = jsonDecode(rawJson);
 
-        final List<dynamic> words = _extractWordList(decoded);
+          final List<dynamic> words = _extractWordList(decoded);
 
-        for (final item in words) {
-          if (item is! Map<String, dynamic>) continue;
+          for (final item in words) {
+            if (item is! Map<String, dynamic>) continue;
 
-          final topic = item['topic']?.toString().trim();
+            final topic = item['topic']?.toString().trim();
 
-          if (topic == null || topic.isEmpty) {
-            topicCounts['Khác'] = (topicCounts['Khác'] ?? 0) + 1;
-          } else {
-            topicCounts[topic] = (topicCounts[topic] ?? 0) + 1;
+            if (topic == null || topic.isEmpty) {
+              topicCounts['Khác'] = (topicCounts['Khác'] ?? 0) + 1;
+            } else {
+              topicCounts[topic] = (topicCounts[topic] ?? 0) + 1;
+            }
           }
+        } catch (_) {
+          // TODO: Có thể log lỗi đọc JSON ở đây nếu cần.
+          // Không throw để app vẫn chạy khi thiếu 1 file data.
         }
-      } catch (_) {
-        // TODO: Có thể log lỗi đọc JSON ở đây nếu cần.
-        // Không throw để app vẫn chạy khi thiếu 1 file data.
       }
+
+      _cachedTopicCounts = Map.unmodifiable(topicCounts);
     }
 
     final topics = <TopicModel>[];

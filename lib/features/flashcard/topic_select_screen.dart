@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_bar_custom.dart';
+import '../../core/widgets/app_decorative_background.dart';
 import '../../core/widgets/bottom_nav.dart';
-import '../../core/widgets/decorative_background.dart';
 import '../../core/widgets/topic_card.dart';
 import 'topic_select_provider.dart';
 
@@ -21,18 +21,8 @@ class TopicSelectScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: DecorativeBackground(
-        // Asset dự kiến:
-        // cherryBlossomAsset: 'assets/images/cherry_branch.png'
-        // lanternAsset: 'assets/images/lantern.png'
-        // mountainAsset: 'assets/images/cloud_mountain.png'
-        cherryBlossomAsset: 'assets/images/cherry_branch.png',
-        lanternAsset: null,
-        mountainAsset: 'assets/images/cloud_mountain.png',
-        showCherry: true,
-        showLantern: false,
-        showCloud: false,
-        showMountain: true,
+      body: AppDecorativeBackground(
+        useSafeArea: true,
         child: Column(
           children: [
             Padding(
@@ -83,11 +73,11 @@ class TopicSelectScreen extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: BottomNav(
-        currentIndex: 0,
+        currentIndex: mode == TopicSelectMode.game ? 2 : 0,
         items: const [
           BottomNavItem(icon: Icons.home_outlined, label: 'Trang chủ'),
           BottomNavItem(icon: Icons.search_outlined, label: 'Tìm kiếm'),
-          BottomNavItem(icon: Icons.translate_outlined, label: 'Dịch'),
+          BottomNavItem(icon: Icons.menu_book_outlined, label: 'Nối từ'),
           BottomNavItem(icon: Icons.person_outline, label: 'Cài đặt'),
         ],
         onTap: (index) {
@@ -99,7 +89,7 @@ class TopicSelectScreen extends ConsumerWidget {
               context.go(AppRoutes.search);
               break;
             case 2:
-              context.go(AppRoutes.translate);
+              context.go(AppRoutes.gameTopics);
               break;
             case 3:
               context.go(AppRoutes.account);
@@ -164,21 +154,14 @@ class _TopicHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppTheme.spacing12),
-        Image.asset(
-          'assets/images/flashcard_header.png',
-          width: 130,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) {
-            return Container(
-              width: 110,
-              height: 90,
-              decoration: BoxDecoration(
-                color: AppTheme.iconSoftBg,
-                borderRadius: AppTheme.cardRadius,
-              ),
-              child: Center(child: Text('汉', style: AppTheme.hanziMedium)),
-            );
-          },
+        Container(
+          width: 110,
+          height: 90,
+          decoration: BoxDecoration(
+            color: AppTheme.iconSoftBg,
+            borderRadius: AppTheme.cardRadius,
+          ),
+          child: Center(child: Text('汉', style: AppTheme.hanziMedium)),
         ),
       ],
     );
@@ -235,6 +218,7 @@ class _TopicGrid extends ConsumerWidget {
               iconBackgroundColor: item.iconBackgroundColor,
               progressValue: item.topic.progressValue,
               progressText: item.topic.progressText,
+              showProgress: mode != TopicSelectMode.game,
               compact: width < 390,
               onTap: () {
                 final encodedTopic = Uri.encodeComponent(item.topic.key);

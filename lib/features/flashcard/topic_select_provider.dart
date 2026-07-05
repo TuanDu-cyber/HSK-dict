@@ -5,20 +5,20 @@ import '../../models/topic_model.dart';
 import '../../repositories/flashcard_progress_repository.dart';
 import '../../repositories/quiz_progress_repository.dart';
 import '../../repositories/topic_repository.dart';
+import '../../repositories/writing_progress_repository.dart';
+import '../../repositories/speaking_progress_repository.dart';
 
-enum TopicSelectMode { flashcard, quiz, writing, speaking }
+enum TopicSelectMode { flashcard, quiz, writing, speaking, game }
 
 extension TopicSelectModeX on TopicSelectMode {
   String get title {
     switch (this) {
       case TopicSelectMode.flashcard:
-        return 'Flashcard';
       case TopicSelectMode.quiz:
-        return 'Quiz';
       case TopicSelectMode.writing:
-        return 'Writing';
       case TopicSelectMode.speaking:
-        return 'Luyện nói';
+      case TopicSelectMode.game:
+        return 'Chọn chủ đề';
     }
   }
 
@@ -32,6 +32,8 @@ extension TopicSelectModeX on TopicSelectMode {
         return 'writing';
       case TopicSelectMode.speaking:
         return 'speaking';
+      case TopicSelectMode.game:
+        return 'game';
     }
   }
 
@@ -45,6 +47,8 @@ extension TopicSelectModeX on TopicSelectMode {
         return '/writing';
       case TopicSelectMode.speaking:
         return '/speaking';
+      case TopicSelectMode.game:
+        return '/game';
     }
   }
 }
@@ -75,6 +79,12 @@ final topicSelectProvider = FutureProvider.autoDispose
 
       final quizProgressRepository = ref.watch(quizProgressRepositoryProvider);
 
+      final writingProgressRepository = ref.watch(
+        writingProgressRepositoryProvider,
+      );
+      final speakingProgressRepository = ref.watch(
+        speakingProgressRepositoryProvider,
+      );
       final topics = await topicRepository.getTopics(modeKey: mode.key);
 
       final items = <TopicSelectItem>[];
@@ -98,6 +108,28 @@ final topicSelectProvider = FutureProvider.autoDispose
 
           progressCount = await quizProgressRepository
               .getCurrentQuestionPositionCount(topic.key);
+
+          if (progressCount > totalCount) {
+            progressCount = totalCount;
+          }
+        }
+
+        if (mode == TopicSelectMode.writing) {
+          totalCount = topic.totalCount > 20 ? 20 : topic.totalCount;
+
+          progressCount = await writingProgressRepository
+              .getCurrentPositionCount(topic.key);
+
+          if (progressCount > totalCount) {
+            progressCount = totalCount;
+          }
+        }
+
+        if (mode == TopicSelectMode.speaking) {
+          totalCount = topic.totalCount > 20 ? 20 : topic.totalCount;
+
+          progressCount = await speakingProgressRepository
+              .getCurrentPositionCount(topic.key);
 
           if (progressCount > totalCount) {
             progressCount = totalCount;
@@ -143,6 +175,10 @@ IconData _getTopicIcon(String topic) {
       return Icons.wb_sunny_outlined;
     case 'School & Learning':
       return Icons.school_outlined;
+    case 'Health & Body':
+      return Icons.monitor_heart_outlined;
+    case 'Work & Career':
+      return Icons.work_outline;
     default:
       return Icons.menu_book_outlined;
   }
@@ -170,6 +206,10 @@ Color _getTopicColor(String topic) {
       return const Color(0xFF5DADE2);
     case 'School & Learning':
       return const Color(0xFF74C365);
+    case 'Health & Body':
+      return const Color(0xFFE96D8B);
+    case 'Work & Career':
+      return const Color(0xFF6C8AE4);
     default:
       return const Color(0xFFE8A0A2);
   }

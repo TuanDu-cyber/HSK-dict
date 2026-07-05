@@ -10,6 +10,7 @@ class WordCard extends StatelessWidget {
     required this.meaning,
     this.tags = const [],
     this.isBookmarked = false,
+    this.showBookmark = true,
     this.onTap,
     this.onSpeak,
     this.onBookmark,
@@ -20,6 +21,7 @@ class WordCard extends StatelessWidget {
   final String meaning;
   final List<String> tags;
   final bool isBookmarked;
+  final bool showBookmark;
   final VoidCallback? onTap;
   final VoidCallback? onSpeak;
   final VoidCallback? onBookmark;
@@ -57,13 +59,15 @@ class WordCard extends StatelessWidget {
               ),
               const SizedBox(width: AppTheme.spacing8),
               _IconAction(icon: Icons.volume_up_outlined, onTap: onSpeak),
-              const SizedBox(width: AppTheme.spacing6),
-              _IconAction(
-                icon: isBookmarked
-                    ? Icons.bookmark
-                    : Icons.bookmark_border_outlined,
-                onTap: onBookmark,
-              ),
+              if (showBookmark) ...[
+                const SizedBox(width: AppTheme.spacing6),
+                _IconAction(
+                  icon: isBookmarked
+                      ? Icons.bookmark
+                      : Icons.bookmark_border_outlined,
+                  onTap: onBookmark,
+                ),
+              ],
             ],
           ),
         ),
